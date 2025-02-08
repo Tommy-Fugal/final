@@ -1,0 +1,70 @@
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, accuracy_score
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.metrics import mean_squared_error, r2_score
+
+df = pd.read_csv('shopping.zip')
+
+
+print(df.info())
+print(df.describe())
+
+sns.histplot(df['Tenure_Months'], kde=True)
+plt.title('Distribution of Tenure (Months)')
+plt.show()
+
+corr_matrix = df.corr()
+sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt='.2f')
+plt.title('Correlation Matrix')
+plt.show()
+
+sns.countplot(x='Gender', data=df)
+plt.title('Gender Distribution')
+plt.show()
+
+sns.countplot(x='Product_Category', data=df)
+plt.title('Product Category Distribution')
+plt.show()
+
+
+print(df.isnull().sum())
+
+df['Online_Spend'] = df['Online_Spend'].fillna(df['Online_Spend'].mean())
+df['Product_Category'] = df['Product_Category'].fillna(df['Product_Category'].mode()[0])
+
+label_encoder = LabelEncoder()
+
+df['Gender'] = label_encoder.fit_transform(df['Gender'])  # Male=0, Female=1
+df['Product_Category'] = label_encoder.fit_transform(df['Product_Category'])
+df['Month'] = label_encoder.fit_transform(df['Month'])
+
+scaler = StandardScaler()
+df[['Tenure_Months', 'Quantity', 'Avg_Price', 'Delivery_Charges', 'GST', 'Offline_Spend', 'Online_Spend', 'Discount_pct']] = scaler.fit_transform(df[['Tenure_Months', 'Quantity', 'Avg_Price', 'Delivery_Charges', 'GST', 'Offline_Spend', 'Online_Spend', 'Discount_pct']])
+
+
+X = df[['Tenure_Months', 'Quantity', 'Avg_Price', 'Delivery_Charges', 'GST', 'Offline_Spend', 'Online_Spend', 'Discount_pct']]
+y = df['Coupon_Status']  # Assuming 'Coupon_Status' is the target variable
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+print(f"Logistic Regression Accuracy: {accuracy_score(y_test, y_pred):.2f}")
+print("Logistic Regression Classification Report:\n", classification_report(y_test, y_pred))
+
+
+rf_model = RandomForestClassifier(random_state=42)
+rf_model.fit(X_train, y_train)
+
+y_pred_rf = rf_model.predict(X_test)
+
+print(f"Random Forest Accuracy: {accuracy_score(y_test, y_pred_rf):.2f}")
+print("Random Forest Classification Report:\n", classification_report(y_test, y_pred_rf))
